@@ -285,7 +285,7 @@ function renderStatusBadge(imageName) {
         imageName = imageName[0];
     }
 
-    console.log("Docker imageName (string):", imageName);
+    //console.log("Docker imageName (string):", imageName);
 
     const cleanDockerName = normalizeImageName(imageName);
     //console.log("Normalized Docker name:", cleanDockerName);
@@ -350,8 +350,22 @@ function formatDate(str) {
 function formatDateEU(d) {
     if (!d) return "-";
 
-    // FIX: convert seconds → milliseconds
-    const dt = new Date(d * 1000);
+    let dt;
+
+    // If it's an ISO string → parse directly
+    if (typeof d === "string" && d.includes("T")) {
+        dt = new Date(d);
+    }
+    // If it's a number → detect seconds vs ms
+    else if (typeof d === "number") {
+        const isMilliseconds = d > 10_000_000_000;
+        dt = new Date(isMilliseconds ? d : d * 1000);
+    }
+    else {
+        return "-";
+    }
+
+    if (isNaN(dt.getTime())) return "-";
 
     const day = dt.getDate().toString().padStart(2, "0");
     const month = (dt.getMonth() + 1).toString().padStart(2, "0");
@@ -363,6 +377,7 @@ function formatDateEU(d) {
 
     return `${day}.${month}.${year}. ${hours}:${minutes}:${seconds}`;
 }
+
 
 // ===============================
 // IMAGE MODAL

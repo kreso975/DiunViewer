@@ -266,3 +266,12 @@ This method keeps the DIUN container stateless while allowing DIUN Viewer to coe
 
 MIT License  
 See LICENSE for details.
+
+
+| Images | Events |
+|--------|--------|
+| ![Images](DOCS/Images.png) | ![Events](DOCS/Events.png) |
+
+| Image Details |
+|---------------|
+| ![Image Modal](DOCS/ImagesModal.png) |
