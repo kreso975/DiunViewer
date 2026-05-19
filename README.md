@@ -66,7 +66,7 @@ The server reads a simple key/value config file diunViewer.cfg, for example:
 
 ```ini
 PUBLIC_DIR=/tools/public
-LISTEN_PORT=:80
+LISTEN_PORT=80
 EVENTS_FILE=/data/events.json
 DIUN_BINARY=diun
 LOG_LEVEL=debug
@@ -75,7 +75,7 @@ LOG_LEVEL=debug
 ## Configuration Keys
 
 - **PUBLIC_DIR** – directory containing static frontend files  
-- **LISTEN_PORT** – port for the HTTP server (e.g. `:80`)  
+- **LISTEN_PORT** – port for the HTTP server (e.g. `80`)  
 - **EVENTS_FILE** – path to the JSON file used to persist events  
 - **DIUN_BINARY** – path or name of the DIUN binary  
 - **LOG_LEVEL** – `info` or `debug`  
@@ -143,8 +143,8 @@ LOG_LEVEL=debug
 ### Build and run (Go)
 
 ```bash
-go build -o diun-viewer
-./diun-viewer
+go build -o diunViewer
+./diunViewer
 ```
 
 Ensure:
@@ -172,9 +172,9 @@ services:
 
     networks:
       qnet-static-eth0-79e6cc:
-        ipv4_address: 192.168.1.226
+        ipv4_address: 192.168.1.26
 
-    mac_address: 02:42:37:48:85:29
+    mac_address: 02:42:17:48:85:49
 
     volumes:
       - /share/Container/Diun/data:/data
@@ -211,27 +211,6 @@ set -e
 
 ```
 
-# Force DNS immediately
-```
-echo "nameserver 192.168.1.53" > /etc/resolv.conf
-
-echo "[GO] Starting Go webserver..."
-/tools/diun-web 2>&1 &
-
-echo "[DNS] Waiting 5 seconds for QNAP to finish overwriting resolv.conf..."
-sleep 5
-```
-
-# Force DNS again AFTER QNAP overwrites it
-
-```
-echo "nameserver 192.168.1.53" > /etc/resolv.conf
-echo "nameserver 1.1.1.1" >> /etc/resolv.conf
-echo "nameserver 8.8.8.8" >> /etc/resolv.conf
-
-echo "[DIUN] Starting DIUN..."
-exec /usr/local/bin/diun serve
-```
 
 ## Injecting DIUN Viewer Into the DIUN Docker Image
 
@@ -251,13 +230,13 @@ fully persistent and untouched.
   
 1. A host directory is mounted into the container at `/tools`:  
   
-   ```yaml
-   - /share/Container/Diun/tools:/tools
+```yaml
+/share/Container/Diun/tools:/tools
 ```
 
 This directory contains:
 
-- **diun-web** — the Go DIUN Viewer server binary  
+- **diunViewer** — the Go DIUN Viewer server binary  
 - **diunViewer.cfg** — configuration file  
 - **entrypoint.sh** — custom startup script  
 
@@ -266,39 +245,11 @@ The container’s entrypoint is overridden:
 ```yaml
 entrypoint: ["/tools/entrypoint.sh"]
 ```
-
-The custom entrypoint:
-
-- Forces DNS (required on QNAP)  
-- Starts the DIUN Viewer webserver in the background  
-- Waits for QNAP to overwrite DNS  
-- Forces DNS again  
+  
+  
+The custom entrypoint:  
+- Starts the DIUN Viewer webserver in the background   
 - Starts the official DIUN binary normally  
-
-### entrypoint.sh
-
-```sh
-#!/bin/sh
-set -e
-
-# Force DNS immediately
-echo "nameserver 192.168.1.53" > /etc/resolv.conf
-
-echo "[GO] Starting Go webserver..."
-/tools/diun-web 2>&1 &
-
-echo "[DNS] Waiting 5 seconds for QNAP to finish overwriting resolv.conf..."
-sleep 5
-
-# Force DNS again AFTER QNAP overwrites it
-echo "nameserver 192.168.1.53" > /etc/resolv.conf
-echo "nameserver 1.1.1.1" >> /etc/resolv.conf
-echo "nameserver 8.8.8.8" >> /etc/resolv.conf
-
-echo "[DIUN] Starting DIUN..."
-exec /usr/local/bin/diun serve
-
-```
 
 ## Result
 
