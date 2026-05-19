@@ -25,11 +25,10 @@ It provides a simple UI to inspect images, view update events, and correlate ima
   - Executes `diun image list --raw`
   - Receives DIUN webhook events
   - Stores events in `events.json`
-  - Cleans obsolete events
   - Exposes a small REST API
 
 - **Frontend:** Static HTML + JS
-  - Bootstrap 5 + AdminLTE layout
+  - Bootstrap 5 + AdminLTE 4 layout
   - jQuery + DataTables for tables
   - FontAwesome + Bootstrap Icons for icons
   - Vanilla JS (`app.js`) for logic
@@ -63,11 +62,11 @@ High‑level flow:
 
 ### Configuration
 
-The server reads a simple key/value config file, for example:
+The server reads a simple key/value config file diunViewer.cfg, for example:
 
 ```ini
 PUBLIC_DIR=/tools/public
-LISTEN_ADDR=:80
+LISTEN_PORT=:80
 EVENTS_FILE=/data/events.json
 DIUN_BINARY=diun
 LOG_LEVEL=debug
@@ -76,7 +75,7 @@ LOG_LEVEL=debug
 ## Configuration Keys
 
 - **PUBLIC_DIR** – directory containing static frontend files  
-- **LISTEN_ADDR** – address for the HTTP server (e.g. `:80`)  
+- **LISTEN_PORT** – port for the HTTP server (e.g. `:80`)  
 - **EVENTS_FILE** – path to the JSON file used to persist events  
 - **DIUN_BINARY** – path or name of the DIUN binary  
 - **LOG_LEVEL** – `info` or `debug`  
@@ -88,7 +87,7 @@ LOG_LEVEL=debug
 ### Technologies
 
 - **Bootstrap 5** – layout and components  
-- **AdminLTE** – sidebar and dashboard styling  
+- **AdminLTE 4** – sidebar and dashboard styling  
 - **jQuery 3.6** – DOM helpers  
 - **DataTables 1.13** – sortable/searchable tables  
 - **FontAwesome 5** and **Bootstrap Icons** – icons  
@@ -138,32 +137,6 @@ LOG_LEVEL=debug
 - Bootstrap alerts for success/error (auto‑dismissed)  
 
 ---
-
-## Navigation
-
-- Sidebar links use `data-page="images"` and `data-page="events"`  
-- JavaScript toggles visibility of `#page-images` and `#page-events`  
-- No page reloads; navigation is fully client‑side  
-
----
-
-## Auto‑Refresh
-
-On `DOMContentLoaded`:
-
-1. `loadEvents()` is awaited first  
-2. `loadImages()` is awaited second  
-
-Then a timer runs every 5 minutes:
-
-```js
-setInterval(async () => {
-    await loadEvents();
-    await loadImages();
-}, 5 * 60 * 1000);
-```
-
-This ensures events load before images so status badges correlate correctly.
 
 ## Installation
 

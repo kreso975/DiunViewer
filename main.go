@@ -35,12 +35,12 @@ func main() {
 
 	// REQUIRED CONFIG VALUES
 	publicDir := require(cfg, "PUBLIC_DIR")
-	listenAddr := require(cfg, "LISTEN_ADDR")
+	listenPort := require(cfg, "LISTEN_PORT")
 	eventsFile = require(cfg, "EVENTS_FILE")
 	diunBinary = require(cfg, "DIUN_BINARY")
 
 	logDebug("PUBLIC_DIR=%s", publicDir)
-	logDebug("LISTEN_ADDR=%s", listenAddr)
+	logDebug("LISTEN_PORT=%s", listenPort)
 	logDebug("EVENTS_FILE=%s", eventsFile)
 	logDebug("DIUN_BINARY=%s", diunBinary)
 
@@ -54,8 +54,8 @@ func main() {
 	fs := http.FileServer(http.Dir(publicDir))
 	http.Handle("/", fs)
 
-	logInfo("DIUN Webserver running on %s", listenAddr)
-	log.Fatal(http.ListenAndServe(listenAddr, nil))
+	logInfo("DIUN Webserver running on %s", listenPort)
+	log.Fatal(http.ListenAndServe(":"+listenPort, nil))
 }
 
 func logInfo(format string, v ...interface{}) {

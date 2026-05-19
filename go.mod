@@ -1,3 +1,3 @@
-module diun-web
+module diunViewer
 
 go 1.24.0

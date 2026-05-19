@@ -5,7 +5,7 @@ set -e
 echo "nameserver 192.168.1.53" > /etc/resolv.conf
 
 echo "[GO] Starting Go webserver..."
-/tools/diun-web 2>&1 &
+/tools/diunViewer 2>&1 &
 
 echo "[DNS] Waiting 5 seconds for QNAP to finish overwriting resolv.conf..."
 sleep 5
