@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -9,6 +10,9 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/client"
 )
 
 var logLevel = "INFO"
@@ -166,9 +170,36 @@ func saveEventsToFile() {
 }
 
 // ----------------------------
-// IMAGES (DIUN RAW JSON)
+// IMAGES (DOCKER IMAGE LIST)
 // ----------------------------
 func handleImages(w http.ResponseWriter, r *http.Request) {
+	cli, err := client.NewClientWithOpts(
+		client.WithHost("unix:///var/run/docker.sock"),
+		client.WithAPIVersionNegotiation(),
+	)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	images, err := cli.ImageList(
+		context.Background(),
+		image.ListOptions{}, // <-- NEW LOCATION
+	)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(images)
+}
+
+// ----------------------------
+// IMAGES (DIUN RAW JSON)
+// ----------------------------
+/*
+func handleDiunImages(w http.ResponseWriter, r *http.Request) {
 	logDebug("handleImages: executing %s image list --raw", diunBinary)
 
 	cmd := exec.Command(diunBinary, "image", "list", "--raw")
@@ -186,7 +217,7 @@ func handleImages(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	_, _ = w.Write(out)
 }
-
+*/
 // ----------------------------
 // RETURN RAW EVENTS
 // ----------------------------

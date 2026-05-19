@@ -102,9 +102,9 @@ async function loadImages() {
     try {
         const r = await fetch("/api/images");
         const data = await r.json();
-        IMAGES_DB = data.images;
-        renderImagesTable(data.images);
-    } catch (err) {
+        IMAGES_DB = data;
+        renderImagesTable(IMAGES_DB);
+    } catch (err) { 
         return console.error("API /images error:", err);
     }
 }
@@ -130,14 +130,54 @@ async function loadEvents() {
 function renderImagesTable(data) {
 
     // Map backend → frontend keys for table only
-    const tableData = data.map(x => ({
-        name: normalizeName(x.name),
-        originalName: x.name,
-        tag: x.latest.tag,
-        digest: x.latest.digest,
-        status: x.latest.digest || "",
-        created: x.latest.created
-    }));
+    const tableData = data.map(x => {
+
+    // LOG ONLY when RepoTags is empty
+        if (!Array.isArray(x.RepoTags) || x.RepoTags.length === 0) {
+            console.warn("EMPTY RepoTags detected:", {
+                id: x.Id,
+                repoTags: x.RepoTags,
+                repoDigests: x.RepoDigests
+            });
+        }
+
+        // 1) Determine tag or fallback to RepoDigest
+        let tag;
+
+        if (Array.isArray(x.RepoTags) && x.RepoTags.length > 0) {
+            tag = x.RepoTags[0];
+        } else if (Array.isArray(x.RepoDigests) && x.RepoDigests.length > 0) {
+            const digestEntry = x.RepoDigests[0];
+            tag = digestEntry.split("@")[0];
+        } else {
+            tag = "<none>";
+        }
+
+        // 2) Extract digest from RepoDigests
+        let digest = "";
+        if (Array.isArray(x.RepoDigests) && x.RepoDigests.length > 0) {
+            digest = x.RepoDigests[0].split("@")[1] || "";
+        }
+
+        // 3) Status: RepoTags or "<none>"
+        const checkTags = (
+            Array.isArray(x.RepoTags) && x.RepoTags.length > 0
+        )
+            ? tag.split(":")[1]
+            : "&lt;none&gt;";
+
+
+        return {
+            docker: x,
+            name: tag.split(":")[0],
+            originalName: tag,
+            tag: checkTags,
+            digest: x.Id,
+            status: x.RepoTags,
+            created: x.Created
+        };
+    });
+        
 
     $("#images").DataTable({
         data: tableData,
@@ -166,11 +206,14 @@ function renderImagesTable(data) {
                 e.preventDefault();
 
                 const name = this.getAttribute("data-image");
-                const full = IMAGES_DB.find(x => x.name === name);
-
-                openImageModal(full);
+                const row = tableData.find(x => x.originalName === name);
+                
+                if (row && row.docker) {
+                    openImageModal(row.docker);
+                }
             });
         }
+
     });
 }
 
@@ -231,19 +274,38 @@ function saveEventsToServer() {
 // ===============================
 // STATUS BADGE
 // ===============================
-function renderStatusBadge(digest) {
+function renderStatusBadge(imageName) {
+
+    //console.group("STATUS CHECK");
+    //console.log("Docker raw imageName:", imageName);
+
+    // FIX: handle array input
+    if (Array.isArray(imageName)) {
+        //console.log("Image name was array, using first element:", imageName[0]);
+        imageName = imageName[0];
+    }
+
+    console.log("Docker imageName (string):", imageName);
+
+    const cleanDockerName = normalizeImageName(imageName);
+    //console.log("Normalized Docker name:", cleanDockerName);
 
     const matches = EVENTS_DB
-        .filter(ev => ev.digest === digest)
+        .filter(ev => {
+            const eventName = normalizeImageName(ev.image.split("@")[0]);
+            //console.log("Comparing with DIUN event image:", eventName);
+            return eventName === cleanDockerName;
+        })
         .map(ev => ({
             eventDigest: ev.digest,
             eventId: ev._id,
             created: ev.created
         }));
 
-    const hasEvent = matches.length > 0;
+    //console.log("Matches found:", matches.length, matches);
+    //console.groupEnd();
 
-    console.groupEnd();
+    const hasEvent = matches.length > 0;
 
     if (hasEvent) {
         return `
@@ -259,6 +321,21 @@ function renderStatusBadge(digest) {
 }
 
 
+// ===============================
+// NORMALIZATION
+// ===============================
+function normalizeImageName(name) {
+    if (!name || typeof name !== "string") {
+        console.warn("normalizeImageName: invalid input:", name);
+        return "";
+    }
+
+    return name
+        .replace(/^docker\.io\//, "")
+        .replace(/^index\.docker\.io\//, "")
+        .replace(/^registry-1\.docker\.io\//, "");
+}
+
 
 // ===============================
 // DATE FORMATTER
@@ -272,7 +349,9 @@ function formatDate(str) {
 
 function formatDateEU(d) {
     if (!d) return "-";
-    const dt = new Date(d);
+
+    // FIX: convert seconds → milliseconds
+    const dt = new Date(d * 1000);
 
     const day = dt.getDate().toString().padStart(2, "0");
     const month = (dt.getMonth() + 1).toString().padStart(2, "0");
@@ -285,22 +364,33 @@ function formatDateEU(d) {
     return `${day}.${month}.${year}. ${hours}:${minutes}:${seconds}`;
 }
 
-
 // ===============================
 // IMAGE MODAL
 // ===============================
 function openImageModal(image) {
     if (!image) return;
 
-    const latest = image.latest || {};
+    // Extract tag
+    const tagFull = Array.isArray(image.RepoTags) && image.RepoTags.length > 0
+        ? image.RepoTags[0]               // "postgres:15"
+        : "<none>";
 
-    document.getElementById("imageModalTitle").textContent = "Image details: " + normalizeName(image.name);
+    const [name, tag] = tagFull.includes(":")
+        ? tagFull.split(":")
+        : [tagFull, ""];
 
-    // Build Labels block
+    // Extract digest
+    const digest = Array.isArray(image.RepoDigests) && image.RepoDigests.length > 0
+        ? image.RepoDigests[0]            // "postgres@sha256:..."
+        : "";
+
+    // Extract labels
+    const labels = image.Labels || {};
+
+    // Build labels HTML
     let labelsHTML = "-";
-
-    if (latest.labels && typeof latest.labels === "object") {
-        const items = Object.entries(latest.labels)
+    if (labels && typeof labels === "object" && Object.keys(labels).length > 0) {
+        const items = Object.entries(labels)
             .map(([key, val]) => `
                 <dt class="col-sm-4">${key}</dt>
                 <dd class="col-sm-8">${val}</dd>
@@ -320,33 +410,41 @@ function openImageModal(image) {
         `;
     }
 
+    // Build modal body
     const body = `
         <dl class="row">
             <dt class="col-sm-3">Name</dt>
-            <dd class="col-sm-9">${image.name || "-"}</dd>
+            <dd class="col-sm-9">${name}</dd>
 
             <dt class="col-sm-3">Tag</dt>
-            <dd class="col-sm-9">${latest.tag || "-"}</dd>
-
-            <dt class="col-sm-3">Platform</dt>
-            <dd class="col-sm-9">${latest.platform || "-"}</dd>
+            <dd class="col-sm-9">${tag}</dd>
 
             <dt class="col-sm-3">Digest</dt>
-            <dd class="col-sm-9"><code>${latest.digest || "-"}</code></dd>
+            <dd class="col-sm-9"><code>${digest || "-"}</code></dd>
+
+            <dt class="col-sm-3">Image ID</dt>
+            <dd class="col-sm-9"><code>${image.Id}</code></dd>
 
             <dt class="col-sm-3">Status</dt>
-            <dd class="col-sm-9">${renderStatusBadge(latest.digest || "")}</dd>
+            <dd class="col-sm-9">${renderStatusBadge(image.RepoTags)}</dd>
 
             <dt class="col-sm-3">Created</dt>
-            <dd class="col-sm-9">${formatDateEU(latest.created)}</dd>
+            <dd class="col-sm-9">${formatDateEU(image.Created)}</dd>
+
+            <dt class="col-sm-3">Size</dt>
+            <dd class="col-sm-9">${(image.Size / 1024 / 1024).toFixed(1)} MB</dd>
 
             <dt class="col-sm-3">Labels</dt>
             <dd class="col-sm-9">${labelsHTML}</dd>
         </dl>
     `;
 
+    document.getElementById("imageModalTitle").textContent =
+        "Image details: " + name;
+
     document.getElementById("imageModalBody").innerHTML = body;
 
+    // Toggle labels
     const toggle = document.getElementById("toggleLabels");
     if (toggle) {
         toggle.addEventListener("click", e => {
@@ -356,10 +454,9 @@ function openImageModal(image) {
         });
     }
 
-    const modal = new bootstrap.Modal(document.getElementById("imageModal"));
-    modal.show();
-
+    new bootstrap.Modal(document.getElementById("imageModal")).show();
 }
+
 
 function showEventAlert(type, message) {
     const id = "alert-" + Date.now();
