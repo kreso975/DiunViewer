@@ -1,0 +1,12 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build Linux AMD64",
+      "type": "shell",
+      "command": "GOOS=linux GOARCH=amd64 go build -o diun-web main.go",
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}
