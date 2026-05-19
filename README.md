@@ -22,10 +22,11 @@ It provides a simple UI to inspect images, view update events, and correlate ima
 
 - **Backend:** Go HTTP server
   - Serves static frontend
-  - Executes `diun image list --raw`
+  - Uses Docker SDK (`ImageList`) to list local Docker images
   - Receives DIUN webhook events
   - Stores events in `events.json`
-  - Exposes a small REST API
+  - Exposes a small JSON REST API (`/api/images`, `/api/events`, etc.)
+
 
 - **Frontend:** Static HTML + JS
   - Bootstrap 5 + AdminLTE 4 layout

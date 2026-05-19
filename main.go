@@ -173,26 +173,44 @@ func saveEventsToFile() {
 // IMAGES (DOCKER IMAGE LIST)
 // ----------------------------
 func handleImages(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+	logInfo("handleImages: %s %s", r.Method, r.URL.Path)
+
 	cli, err := client.NewClientWithOpts(
 		client.WithHost("unix:///var/run/docker.sock"),
 		client.WithAPIVersionNegotiation(),
 	)
 	if err != nil {
+		logWarn("Docker client init failed: %v", err)
 		http.Error(w, err.Error(), 500)
 		return
 	}
+	logDebug("Docker client initialized")
 
 	images, err := cli.ImageList(
 		context.Background(),
-		image.ListOptions{}, // <-- NEW LOCATION
+		image.ListOptions{},
 	)
 	if err != nil {
+		logWarn("ImageList error: %v", err)
 		http.Error(w, err.Error(), 500)
 		return
 	}
 
+	logInfo("handleImages: returning %d images", len(images))
+	logDebug("First image: %+v", func() interface{} {
+		if len(images) > 0 {
+			return images[0]
+		}
+		return "no images"
+	}())
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(images)
+	if err := json.NewEncoder(w).Encode(images); err != nil {
+		logWarn("JSON encode error: %v", err)
+	}
+
+	logInfo("handleImages completed in %s", time.Since(start))
 }
 
 // ----------------------------
