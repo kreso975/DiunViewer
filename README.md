@@ -48,7 +48,7 @@ High‑level flow:
 ### API Endpoints
 
 - `GET /api/images`  
-  Returns DIUN raw image list (output of `diun image list --raw`).
+  Returns Docker SDK (`ImageList`) to list local Docker images.
 
 - `GET /api/events`  
   Returns stored events after cleaning out entries whose digest is no longer present in DIUN’s current image list.
@@ -156,10 +156,10 @@ Ensure:
 
 ## DIUN Webhook Configuration
 
-```yaml
-notif:
-  webhook:
-    endpoint: http://your-diun-viewer-host/api/diun-webhook
+```
+- DIUN_NOTIF_WEBHOOK_ENDPOINT=http://192.168.1.26/api/diun-webhook
+- DIUN_NOTIF_WEBHOOK_METHOD=POST
+- DIUN_NOTIF_WEBHOOK_TIMEOUT=10s
 ```
 
 ## Docker Example
@@ -195,7 +195,7 @@ services:
       - DIUN_PROVIDERS_DOCKER_WATCHBYDEFAULT=true
       - DIUN_PROVIDERS_DOCKER_WATCHSTOPPED=true
       - DIUN_WATCH_SCHEDULE=0 */6 * * *
-      - DIUN_NOTIF_WEBHOOK_ENDPOINT=http://192.168.1.226/api/diun-webhook
+      - DIUN_NOTIF_WEBHOOK_ENDPOINT=http://192.168.1.26/api/diun-webhook
       - DIUN_NOTIF_WEBHOOK_METHOD=POST
       - DIUN_NOTIF_WEBHOOK_TIMEOUT=10s
 
@@ -204,12 +204,6 @@ services:
 networks:
   qnet-static-eth0-79e6cc:
     external: true
-```
-
-```
-#!/bin/sh
-set -e
-
 ```
 
 
