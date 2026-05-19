@@ -4,7 +4,13 @@
     {
       "label": "Build Linux AMD64",
       "type": "shell",
-      "command": "GOOS=linux GOARCH=amd64 go build -o diun-web main.go",
+      "command": "go build -o diun-web main.go",
+      "options": {
+        "env": {
+          "GOOS": "linux",
+          "GOARCH": "amd64"
+        }
+      },
       "group": "build",
       "problemMatcher": []
     }
