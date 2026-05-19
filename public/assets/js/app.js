@@ -7,23 +7,28 @@ let EVENTS_DB = [];
 // ===============================
 // INIT
 // ===============================
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     setupNav();
-    loadImages();
-    loadEvents();
+
+    // MUST load events first
+    await loadEvents();
+
+    // THEN load images
+    await loadImages();
+
     attachDeleteHandlers();
 
-    // AUTO REFRESH IMAGES TABLE EVERY N MINUTES
     const REFRESH_MINUTES = 5;
-    setInterval(() => {
-        loadImages();
+    setInterval(async () => {
+        await loadEvents();
+        await loadImages();
     }, REFRESH_MINUTES * 60 * 1000);
 
     document.getElementById("imageModal").addEventListener("hide.bs.modal", () => {
         document.activeElement.blur();
     });
-
 });
+
 
 function attachDeleteHandlers() {
 
@@ -93,28 +98,30 @@ function setupNav() {
 // ===============================
 // LOAD IMAGES
 // ===============================
-function loadImages() {
-    fetch("/api/images")
-        .then(r => r.json())
-        .then(data => {
-            IMAGES_DB = data.images;
-            renderImagesTable(data.images);
-        })
-        .catch(err => console.error("API /images error:", err));
+async function loadImages() {
+    try {
+        const r = await fetch("/api/images");
+        const data = await r.json();
+        IMAGES_DB = data.images;
+        renderImagesTable(data.images);
+    } catch (err) {
+        return console.error("API /images error:", err);
+    }
 }
 
 // ===============================
 // LOAD EVENTS
 // ===============================
-function loadEvents() {
-    fetch("/api/events")
-        .then(r => r.json())
-        .then(data => {
-            data.forEach((ev, i) => ev._id = i);
-            EVENTS_DB = data;   // ⭐ store globally
-            renderEventsTable(data);
-        })
-        .catch(err => console.error("API /events error:", err));
+async function loadEvents() {
+    try {
+        const r = await fetch("/api/events");
+        const data = await r.json();
+        data.forEach((ev, i) => ev._id = i);
+        EVENTS_DB = data;
+        renderEventsTable(data);
+    } catch (err) {
+        return console.error("API /events error:", err);
+    }
 }
 
 // ===============================
@@ -125,10 +132,10 @@ function renderImagesTable(data) {
     // Map backend → frontend keys for table only
     const tableData = data.map(x => ({
         name: normalizeName(x.name),
-        originalName: x.name,   // ← used for modal link
+        originalName: x.name,
         tag: x.latest.tag,
         digest: x.latest.digest,
-        status: "",
+        status: x.latest.digest || "",
         created: x.latest.created
     }));
 
@@ -151,7 +158,7 @@ function renderImagesTable(data) {
             },
             { data: "tag", render: d => `<code>${d}</code>` },
             { data: "digest", render: d => `<code>${d}</code>` },
-            { data: "status", render: (d, t, row) => renderStatusBadge(row.digest) },
+            { data: "status", render: (d, t, row) => renderStatusBadge(row.status) },
             { data: "created", render: d => formatDateEU(d) }
         ],
         initComplete: () => {
@@ -225,8 +232,18 @@ function saveEventsToServer() {
 // STATUS BADGE
 // ===============================
 function renderStatusBadge(digest) {
-    // Find if any event has the same digest
-    const hasEvent = EVENTS_DB.some(ev => ev.digest === digest);
+
+    const matches = EVENTS_DB
+        .filter(ev => ev.digest === digest)
+        .map(ev => ({
+            eventDigest: ev.digest,
+            eventId: ev._id,
+            created: ev.created
+        }));
+
+    const hasEvent = matches.length > 0;
+
+    console.groupEnd();
 
     if (hasEvent) {
         return `
@@ -240,6 +257,7 @@ function renderStatusBadge(digest) {
             <i class="fas fa-check-circle me-1"></i>Up to date
         </span>`;
 }
+
 
 
 // ===============================
