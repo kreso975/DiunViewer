@@ -23,6 +23,7 @@ It provides a simple UI to inspect images, view update events, and correlate ima
 - **Backend:** Go HTTP server
   - Serves static frontend
   - Uses Docker SDK (`ImageList`) to list local Docker images
+  - Uses Diun image list -raw to list Diun image list
   - Receives DIUN webhook events
   - Stores events in `events.json`
   - Exposes a small JSON REST API (`/api/images`, `/api/events`, etc.)
@@ -38,8 +39,8 @@ High‑level flow:
 
 1. DIUN sends webhook events to `/api/diun-webhook`
 2. Go server appends events to `events.json`
-3. Frontend calls `/api/events` and `/api/images`
-4. Frontend correlates image digests with events and renders status badges
+3. Frontend calls `/api/events` , `/api/images` and `/api/diunImages`
+4. Frontend correlates Docker image with Diun Images and renders status badges
 
 ---
 
@@ -49,6 +50,9 @@ High‑level flow:
 
 - `GET /api/images`  
   Returns Docker SDK (`ImageList`) to list local Docker images.
+
+- `GET /api/diunImages`  
+  Returns Diun images by diun image list -raw .
 
 - `GET /api/events`  
   Returns stored events after cleaning out entries whose digest is no longer present in DIUN’s current image list.
@@ -96,49 +100,6 @@ LOG_LEVEL=debug
 
 ---
 
-## Pages
-
-### Images
-
-**Data source:** `GET /api/images`
-
-**Columns:**
-- Name (clickable, opens modal)  
-- Tag  
-- Digest  
-- Status (badge)  
-- Created  
-
-**Status badge logic:**
-- **Up to date** → no matching event for the digest  
-- **Outdated** → at least one event exists with the same digest  
-
-**Image modal includes:**
-- Name, tag, platform, digest  
-- Status badge  
-- Created timestamp  
-- Labels (collapsible list)  
-
----
-
-### Events
-
-**Data source:** `GET /api/events`
-
-**Columns:**
-- Image (with checkbox)  
-- Status  
-- Created  
-- Received  
-
-**Features:**
-- “Select all” checkbox  
-- “Delete selected” → `POST /api/events/delete` with selected IDs  
-- “Delete all” → `POST /api/events/delete` with `[]`  
-- Bootstrap alerts for success/error (auto‑dismissed)  
-
----
-
 ## Installation
 
 ### Build and run (Go)
@@ -155,7 +116,7 @@ Ensure:
 - `DIUN_BINARY` is reachable (in PATH or full path)  
 
 ## DIUN Webhook Configuration
-
+webhook only if you want to have it in Diun Viewer
 ```
 - DIUN_NOTIF_WEBHOOK_ENDPOINT=http://192.168.1.26/api/diun-webhook
 - DIUN_NOTIF_WEBHOOK_METHOD=POST
