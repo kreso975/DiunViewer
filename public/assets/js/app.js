@@ -293,19 +293,6 @@ function renderImagesTable(data) {
     });
 }
 
-
-function normalizeName(name) {
-    if (!name) return name;
-
-    // Remove registry prefix (docker.io/, ghcr.io/, quay.io/, etc.)
-    name = name.replace(/^[^/]+\//, "");
-
-    // Remove :tag if present
-    name = name.replace(/:.+$/, "");
-
-    return name;
-}
-
 function renderEventsTable(data) {
 
     // Normalize first
@@ -338,16 +325,6 @@ function renderEventsTable(data) {
     $("#ev-check-all").off("change").on("change", function () {
         $(".ev-check").prop("checked", this.checked);
     });
-}
-
-
-
-function saveEventsToServer() {
-    fetch("/api/events", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(eventStore)
-    }).catch(err => console.error("SAVE EVENTS ERROR:", err));
 }
 
 function matchUpdates(dockerImageName) {
@@ -428,8 +405,6 @@ function matchUpdates(dockerImageName) {
     return match ? true : 0;
 }
 
-
-
 // ===============================
 // STATUS BADGE
 // ===============================
@@ -481,13 +456,6 @@ function stripTag(name) {
 // ===============================
 // DATE FORMATTER
 // ===============================
-function formatDate(str) {
-    if (!str) return "-";
-    const d = new Date(str);
-    if (isNaN(d.getTime())) return str;
-    return d.toLocaleString();
-}
-
 function formatDateEU(d) {
     if (!d) return "-";
 
@@ -518,7 +486,6 @@ function formatDateEU(d) {
 
     return `${day}.${month}.${year}. ${hours}:${minutes}:${seconds}`;
 }
-
 
 // ===============================
 // IMAGE MODAL
@@ -612,7 +579,6 @@ function openImageModal(image) {
 
     new bootstrap.Modal(document.getElementById("imageModal")).show();
 }
-
 
 function showEventAlert(type, message) {
     const id = "alert-" + Date.now();
