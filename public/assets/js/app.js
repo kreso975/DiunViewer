@@ -3,6 +3,7 @@
 // ===============================
 let IMAGES_DB = [];
 let EVENTS_DB = [];
+let DIUN_DB = [];
 
 // ===============================
 // INIT
@@ -13,6 +14,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     // MUST load events first
     await loadEvents();
 
+    // THEN load DIUN images
+    await loadDiunImages();
+
     // THEN load images
     await loadImages();
 
@@ -21,6 +25,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const REFRESH_MINUTES = 5;
     setInterval(async () => {
         await loadEvents();
+        await loadDiunImages();
         await loadImages();
     }, REFRESH_MINUTES * 60 * 1000);
 
@@ -109,6 +114,80 @@ async function loadImages() {
     }
 }
 
+function DockerImageNormalizer(x) {
+
+    const hasTags = x.RepoTags && x.RepoTags.length > 0;
+    const hasDigests = x.RepoDigests && x.RepoDigests.length > 0;
+
+    // 1) Determine fullTag
+    const fullTag = hasTags ? x.RepoTags[0] : "&lt;none&gt;";
+
+    // 2) Determine name + tag
+    let name = "&lt;none&gt;";
+    let tag = "&lt;none&gt;";
+
+    if (hasTags) {
+        // normal case: repo:tag
+        const parts = fullTag.split(":");
+        name = parts[0];
+        tag = parts[1] || "&lt;none&gt;";
+    } else if (hasDigests) {
+        // fallback: extract name from digest
+        // example: "homebridge/homebridge@sha256:416d1de..."
+        const digestEntry = x.RepoDigests[0];
+        name = digestEntry.split("@")[0];   // homebridge/homebridge
+        tag = "&lt;none&gt;";
+    }
+
+    // 3) Extract digest hash
+    let digest = "";
+    if (hasDigests) {
+        const digestEntry = x.RepoDigests[0];
+        digest = digestEntry.split("@")[1] || "";
+    }
+
+    return {
+        docker: x,
+
+        name,          // normalized name
+        tag,           // normalized tag
+        fullTag,       // "<none>" or "repo:tag"
+        digest: x.Id,  // docker image ID
+        repoDigest: hasDigests ? x.RepoDigests[0] : null,
+        created: x.Created,
+
+        repoTags: x.RepoTags,
+        repoDigests: x.RepoDigests
+    };
+}
+
+// ===============================
+// LOAD Diun IMAGES
+// ===============================
+async function loadDiunImages() {
+    try {
+        const r = await fetch("/api/diunImages");
+        const data = await r.json();
+
+        // FIX: normalize DIUN images
+        DIUN_DB = data.images.map(DIUNImageNormalizer);
+
+        console.log("Loaded DIUN images:", DIUN_DB.length);
+    } catch (err) { 
+        console.error("API /diunImages error:", err);
+    }
+}
+
+function DIUNImageNormalizer(x) {
+    return {
+        name: x.name,                     // "docker.io/homebridge/homebridge"
+        tag: x.latest?.tag || "",
+        digest: x.latest?.digest?.split(":")[1] || "",
+        created: x.latest?.created || "",
+        raw: x
+    };
+}
+
 // ===============================
 // LOAD EVENTS
 // ===============================
@@ -124,60 +203,55 @@ async function loadEvents() {
     }
 }
 
+function EventsNormalizer(e) {
+
+    const fullTag = e.image || "<none>";
+
+    let name = "<none>";
+    let tag = "<none>";
+
+    if (fullTag !== "<none>" && fullTag.includes(":")) {
+        const parts = fullTag.split(":");
+        name = parts[0];
+        tag = parts[1];
+    }
+
+    const digestEntry = e.digest || null;
+
+    return {
+        raw: e,
+
+        // normalized
+        id: e._id,
+        name,
+        tag,
+        fullTag,
+        digest: digestEntry,
+        status: e.status,
+        created: e.created,
+        receivedAt: e.received_at,
+        provider: e.provider,
+        platform: e.platform,
+        hubLink: e.hub_link,
+
+        container: {
+            id: e.metadata?.ctn_id || null,
+            name: e.metadata?.ctn_names || null,
+            state: e.metadata?.ctn_state || null,
+            status: e.metadata?.ctn_status || null,
+            createdAt: e.metadata?.ctn_createdat || null,
+            command: e.metadata?.ctn_command || null
+        }
+    };
+}
+
+
 // ===============================
 // RENDER IMAGES TABLE
 // ===============================
 function renderImagesTable(data) {
 
-    // Map backend → frontend keys for table only
-    const tableData = data.map(x => {
-
-    // LOG ONLY when RepoTags is empty
-        if (!Array.isArray(x.RepoTags) || x.RepoTags.length === 0) {
-            console.warn("EMPTY RepoTags detected:", {
-                id: x.Id,
-                repoTags: x.RepoTags,
-                repoDigests: x.RepoDigests
-            });
-        }
-
-        // 1) Determine tag or fallback to RepoDigest
-        let tag;
-
-        if (Array.isArray(x.RepoTags) && x.RepoTags.length > 0) {
-            tag = x.RepoTags[0];
-        } else if (Array.isArray(x.RepoDigests) && x.RepoDigests.length > 0) {
-            const digestEntry = x.RepoDigests[0];
-            tag = digestEntry.split("@")[0];
-        } else {
-            tag = "<none>";
-        }
-
-        // 2) Extract digest from RepoDigests
-        let digest = "";
-        if (Array.isArray(x.RepoDigests) && x.RepoDigests.length > 0) {
-            digest = x.RepoDigests[0].split("@")[1] || "";
-        }
-
-        // 3) Status: RepoTags or "<none>"
-        const checkTags = (
-            Array.isArray(x.RepoTags) && x.RepoTags.length > 0
-        )
-            ? tag.split(":")[1]
-            : "&lt;none&gt;";
-
-
-        return {
-            docker: x,
-            name: tag.split(":")[0],
-            originalName: tag,
-            tag: checkTags,
-            digest: x.Id,
-            status: x.RepoTags,
-            created: x.Created
-        };
-    });
-        
+    const tableData = data.map(DockerImageNormalizer);
 
     $("#images").DataTable({
         data: tableData,
@@ -187,35 +261,38 @@ function renderImagesTable(data) {
         pageLength: 25,
 
         columnDefs: [
-            { targets: [1, 3], className: "text-center" } 
+            { targets: [1, 3], className: "text-center" }
         ],
 
         columns: [
             {
                 data: "name",
                 render: (d, t, row) =>
-                    `<a href="#" class="image-link" data-image="${row.originalName}">${d}</a>`
+                    `<a href="#" class="image-link" data-image="${row.fullTag}">${d}</a>`
             },
             { data: "tag", render: d => `<code>${d}</code>` },
             { data: "digest", render: d => `<code>${d}</code>` },
-            { data: "status", render: (d, t, row) => renderStatusBadge(row.status) },
+            { data: "repoTags", render: (d, t, row) => renderStatusBadge(row.repoTags) },
             { data: "created", render: d => formatDateEU(d) }
         ],
+
         initComplete: () => {
-            $("#images").off("click", ".image-link").on("click", ".image-link", function (e) {
-                e.preventDefault();
+            $("#images")
+                .off("click", ".image-link")
+                .on("click", ".image-link", function (e) {
+                    e.preventDefault();
 
-                const name = this.getAttribute("data-image");
-                const row = tableData.find(x => x.originalName === name);
-                
-                if (row && row.docker) {
-                    openImageModal(row.docker);
-                }
-            });
+                    const fullTag = this.getAttribute("data-image");
+                    const row = tableData.find(x => x.fullTag === fullTag);
+
+                    if (row && row.docker) {
+                        openImageModal(row.docker);
+                    }
+                });
         }
-
     });
 }
+
 
 function normalizeName(name) {
     if (!name) return name;
@@ -229,29 +306,31 @@ function normalizeName(name) {
     return name;
 }
 
-// ===============================
-// RENDER EVENTS TABLE
-// ===============================
 function renderEventsTable(data) {
-    data.sort((a, b) => new Date(b.received_at) - new Date(a.received_at));
+
+    // Normalize first
+    const eventsData = data.map(EventsNormalizer);
+
+    // Sort by receivedAt (normalized field)
+    eventsData.sort((a, b) => new Date(b.receivedAt) - new Date(a.receivedAt));
 
     $("#events").DataTable({
-        data,
+        data: eventsData,
         destroy: true,
         pageLength: 25,
         autoWidth: false,
 
         columns: [
             {
-                data: "image",
+                data: "fullTag",
                 width: "40%",
                 render: (d, t, row) =>
-                    `<input type="checkbox" class="ev-check mr-2" data-id="${row._id}">
-                    <span>${d}</span>`
+                    `<input type="checkbox" class="ev-check mr-2" data-id="${row.id}">
+                     <span>${d}</span>`
             },
             { data: "status", width: "20%" },
             { data: "created", render: d => formatDateEU(d), width: "20%" },
-            { data: "received_at", render: d => formatDateEU(d), width: "20%" }
+            { data: "receivedAt", render: d => formatDateEU(d), width: "20%" }
         ]
     });
 
@@ -262,6 +341,7 @@ function renderEventsTable(data) {
 }
 
 
+
 function saveEventsToServer() {
     fetch("/api/events", {
         method: "POST",
@@ -270,53 +350,103 @@ function saveEventsToServer() {
     }).catch(err => console.error("SAVE EVENTS ERROR:", err));
 }
 
+function matchUpdates(dockerImageName) {
+
+    console.group("🔍 matchUpdates");
+
+    if (Array.isArray(dockerImageName)) {
+        console.log("ℹ️ dockerImageName was array, using:", dockerImageName[0]);
+        dockerImageName = dockerImageName[0] || "";
+    }
+
+    console.log("🟦 Input dockerImageName (raw):", dockerImageName);
+
+    const base = stripTag(normalizeImageName(dockerImageName));
+    console.log("🟦 Normalized base name:", base);
+
+    // DEBUG: SHOW WHAT DIUN_DB ACTUALLY CONTAINS
+    console.log("🔎 DIUN_DB entries (normalized):");
+    DIUN_DB.forEach(d => {
+        const diunBase = stripTag(normalizeImageName(d.name));
+        console.log("   →", diunBase);
+    });
+
+    // find docker image object
+    const docker = IMAGES_DB.find(img => {
+        const tag = img.RepoTags?.[0] || "";
+        return stripTag(normalizeImageName(tag)) === base;
+    });
+
+    console.log("🟦 Docker match:", docker ? docker.RepoTags : "❌ none");
+
+    if (!docker) {
+        console.log("❌ No docker image found → return 0");
+        console.groupEnd();
+        return 0;
+    }
+
+    // find DIUN entry
+    const diun = DIUN_DB.find(d => {
+        const diunBase = stripTag(normalizeImageName(d.name));
+        return diunBase === base;
+    });
+
+    console.log("🟩 DIUN match:", diun ? diun.name : "❌ no match");
+
+    if (!diun) {
+        console.log("❌ No DIUN entry found → return 0");
+        console.groupEnd();
+        return 0;
+    }
+
+    const localDigest = docker.RepoDigests?.[0]
+        ?.split("@")[1]
+        ?.replace("sha256:", "") || "";
+
+    console.log("🟦 Local digest:", localDigest || "❌ none");
+
+    const remoteDigest =
+        diun.digest ||
+        diun.latest?.digest?.replace("sha256:", "") ||
+        "";
+
+    console.log("🟩 Remote digest:", remoteDigest || "❌ none");
+
+    if (!localDigest || !remoteDigest) {
+        console.log("❌ Missing digest(s) → return 0");
+        console.groupEnd();
+        return 0;
+    }
+
+    console.log("🟥 COMPARE:", `"${localDigest}"`, "vs", `"${remoteDigest}"`);
+
+    const match = localDigest === remoteDigest;
+
+    console.log("➡️ RESULT:", match ? "✔ MATCH (true)" : "✘ DIFFERENT (0)");
+    console.groupEnd();
+
+    return match ? true : 0;
+}
+
+
 
 // ===============================
 // STATUS BADGE
 // ===============================
 function renderStatusBadge(imageName) {
 
-    //console.group("STATUS CHECK");
-    //console.log("Docker raw imageName:", imageName);
+    const result = matchUpdates(imageName);
 
-    // FIX: handle array input
-    if (Array.isArray(imageName)) {
-        //console.log("Image name was array, using first element:", imageName[0]);
-        imageName = imageName[0];
-    }
-
-    //console.log("Docker imageName (string):", imageName);
-
-    const cleanDockerName = normalizeImageName(imageName);
-    //console.log("Normalized Docker name:", cleanDockerName);
-
-    const matches = EVENTS_DB
-        .filter(ev => {
-            const eventName = normalizeImageName(ev.image.split("@")[0]);
-            //console.log("Comparing with DIUN event image:", eventName);
-            return eventName === cleanDockerName;
-        })
-        .map(ev => ({
-            eventDigest: ev.digest,
-            eventId: ev._id,
-            created: ev.created
-        }));
-
-    //console.log("Matches found:", matches.length, matches);
-    //console.groupEnd();
-
-    const hasEvent = matches.length > 0;
-
-    if (hasEvent) {
+    if (result === true) {
         return `
-            <span class="badge text-bg-danger badge-status">
-                <i class="fas fa-exclamation-circle me-1"></i>Outdated
+            <span class="badge text-bg-success badge-status">
+                <i class="fas fa-check-circle me-1"></i>Up to date
             </span>`;
     }
 
     return `
-        <span class="badge text-bg-success badge-status">
-            <i class="fas fa-check-circle me-1"></i>Up to date
+        <span class="badge text-bg-danger badge-status">
+            <i class="fas fa-exclamation-circle me-1"></i>Outdated
         </span>`;
 }
 
@@ -325,17 +455,28 @@ function renderStatusBadge(imageName) {
 // NORMALIZATION
 // ===============================
 function normalizeImageName(name) {
-    if (!name || typeof name !== "string") {
-        console.warn("normalizeImageName: invalid input:", name);
-        return "";
-    }
+    if (!name) return "";
 
-    return name
-        .replace(/^docker\.io\//, "")
-        .replace(/^index\.docker\.io\//, "")
-        .replace(/^registry-1\.docker\.io\//, "");
+    name = name.toLowerCase().trim();
+
+    // REMOVE REGISTRY PREFIXES
+    name = name.replace(/^docker\.io\//, "");
+    name = name.replace(/^ghcr\.io\//, "");
+    name = name.replace(/^quay\.io\//, "");
+
+    // REMOVE DOCKER HUB OFFICIAL IMAGE PREFIX
+    name = name.replace(/^library\//, "");
+
+    // REMOVE DIGEST
+    name = name.split("@")[0];
+
+    return name;
 }
 
+// Remove :tag from image names
+function stripTag(name) {
+    return name.split(":")[0];
+}
 
 // ===============================
 // DATE FORMATTER

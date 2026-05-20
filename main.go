@@ -52,6 +52,7 @@ func main() {
 
 	http.HandleFunc("/api/images", handleImages)
 	http.HandleFunc("/api/events", handleEvents)
+	http.HandleFunc("/api/diunImages", handleDiunImages)
 	http.HandleFunc("/api/events/delete", handleDeleteEvents)
 	http.HandleFunc("/api/diun-webhook", handleDiunWebhook)
 
@@ -216,7 +217,6 @@ func handleImages(w http.ResponseWriter, r *http.Request) {
 // ----------------------------
 // IMAGES (DIUN RAW JSON)
 // ----------------------------
-/*
 func handleDiunImages(w http.ResponseWriter, r *http.Request) {
 	logDebug("handleImages: executing %s image list --raw", diunBinary)
 
@@ -235,7 +235,7 @@ func handleDiunImages(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	_, _ = w.Write(out)
 }
-*/
+
 // ----------------------------
 // RETURN RAW EVENTS
 // ----------------------------
