@@ -92,8 +92,12 @@
             <!-- Images page -->
             <div id="page-images">
                 <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Docker Images</h3>
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h3 class="card-title mb-0 flex-grow-1">Docker Images</h3>
+
+                        <button id="refresh-images" class="btn btn-sm btn-outline-secondary ms-auto">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
                     </div>
                     <div class="card-body">
                         <table id="images" class="table table-striped table-bordered">

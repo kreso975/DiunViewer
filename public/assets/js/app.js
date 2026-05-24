@@ -32,6 +32,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("imageModal").addEventListener("hide.bs.modal", () => {
         document.activeElement.blur();
     });
+
+    document.getElementById("refresh-images").addEventListener("click", async () => {
+        const btn = document.getElementById("refresh-images");
+
+        btn.disabled = true;
+        btn.classList.add("loading");
+
+        // artificial delay so spinner is visible
+        await new Promise(r => setTimeout(r, 300));
+
+        await loadImages();
+
+        btn.disabled = false;
+        btn.classList.remove("loading");
+    });
+
 });
 
 

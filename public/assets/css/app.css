@@ -63,3 +63,11 @@ code {
     transform: scale(1.01);
     box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
+
+#refresh-images.loading i {
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    100% { transform: rotate(360deg); }
+}
