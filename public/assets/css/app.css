@@ -1,13 +1,12 @@
+/* ===============================
+   GLOBAL
+   =============================== */
 body {
     background: #f4f6f9;
 }
 
 .card-title {
     font-weight: 600;
-}
-
-table.dataTable tbody tr:hover {
-    background-color: #eef3ff !important;
 }
 
 code {
@@ -21,53 +20,149 @@ code {
     padding: 4px 8px;
 }
 
-.modal-dialog {
-    max-width: 700px;       /* prevents modal from stretching too wide */
-}
-
-#labelsBlock {
-    max-height: 300px;
-    overflow-y: auto;
-    padding-right: 5px;
-}
-
-
-#labelsBlock dt, 
-#labelsBlock dd {
-    word-break: break-word; /* prevents long keys/values from pushing width */
-}
-
-.ev-col-select {
-    width: 28px !important;
-    max-width: 28px !important;
-    text-align: center;
-}
-
-#images tbody tr {
-    transition: transform 0.1s ease, background-color 0.1s ease;
-}
-
-
-#images tbody tr:hover {
-    background-color: #eef5ff !important;
-    transform: scale(1.01);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-}
-
-#events tbody tr {
-    transition: transform 0.1s ease, background-color 0.1s ease;
-}
-
+/* ===============================
+   TABLE HOVER EFFECTS
+   =============================== */
+table.dataTable tbody tr:hover,
+#images tbody tr:hover,
 #events tbody tr:hover {
     background-color: #eef5ff !important;
     transform: scale(1.01);
     box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
 
+#images tbody tr,
+#events tbody tr {
+    transition: transform 0.1s ease, background-color 0.1s ease;
+}
+
+/* ===============================
+   REFRESH BUTTON SPINNER
+   =============================== */
 #refresh-images.loading i {
     animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
     100% { transform: rotate(360deg); }
+}
+
+/* ===============================
+   EVENT SELECT COLUMN
+   =============================== */
+.ev-col-select {
+    width: 28px !important;
+    max-width: 28px !important;
+    text-align: center;
+}
+
+/* ===============================
+   MODAL (modern Bootstrap 5 + AdminLTE style)
+   =============================== */
+.modal-dialog {
+    max-width: 700px;
+}
+
+.modal-content {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+/* Fade-in animation for modal */
+.modal.fade .modal-dialog {
+    transition: transform .25s ease-out, opacity .25s ease-out;
+    transform: translateY(-10px);
+    opacity: 0;
+}
+
+.modal.show .modal-dialog {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.modal-header {
+    background: #0d6efd;
+    color: white;
+    padding: 1rem 1.25rem;
+}
+
+.modal-header .modal-title {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+}
+
+.modal-header .modal-title i {
+    margin-right: 8px;
+}
+
+.btn-close-white {
+    filter: invert(1);
+}
+
+.modal-body {
+    padding: 1.5rem;
+    border-left: 4px solid #0d6efd20;
+    border-right: 4px solid #0d6efd20;
+    border-bottom: 4px solid #0d6efd20;
+    border-radius: 0 0 12px 12px;
+}
+
+.modal-footer {
+    background: #f8f9fa;
+    padding: 0.75rem 1.25rem;
+}
+
+/* ===============================
+   DEFINITION LIST STYLING
+   =============================== */
+.modal-body dl dt {
+    background: #f8f9fa;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.modal-body dl dd {
+    padding: 6px 8px;
+    margin-bottom: 6px;
+    color: #212529;
+}
+
+/* ===============================
+   LABELS BLOCK (collapsible)
+   =============================== */
+#labelsBlock {
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 5px;
+    padding-left: 10px;
+    margin-top: 10px;
+    border-left: 3px solid #0d6efd;
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.08);
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+#labelsBlock dt,
+#labelsBlock dd {
+    word-break: break-word;
+}
+
+#toggleLabels {
+    cursor: pointer;
+    font-weight: 500;
+    transition: color .15s ease;
+}
+
+#toggleLabels:hover {
+    color: #0a58ca;
+    text-decoration: underline;
+}
+
+/* Fade animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
 }

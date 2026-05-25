@@ -642,16 +642,17 @@ function openImageModal(image) {
             .join("");
 
         labelsHTML = `
-            <a href="#" id="toggleLabels" class="text-primary" style="font-size:14px;">
-                Show / Hide Labels
+            <a href="#" id="toggleLabels" class="text-primary">
+                <i class="fas fa-tags me-1"></i> Show / Hide Labels
             </a>
 
-            <div id="labelsBlock" style="display:none; margin-top:10px;">
+            <div id="labelsBlock" style="display:none;">
                 <dl class="row mb-0">
                     ${items}
                 </dl>
             </div>
         `;
+
     }
 
     // Build modal body

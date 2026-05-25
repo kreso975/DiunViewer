@@ -178,15 +178,27 @@
 
     <!-- MODAL -->
     <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="imageModalTitle">Image details</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body" id="imageModalBody"></div>
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0 rounded-3">
+
+            <div class="modal-header bg-primary text-white rounded-top">
+                <h5 class="modal-title d-flex align-items-center">
+                <i class="fas fa-docker me-2"></i>
+                <span id="imageModalTitle">Image details</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-4" id="imageModalBody"></div>
+
+            <div class="modal-footer bg-light rounded-bottom">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                Close
+                </button>
+            </div>
+
+            </div>
         </div>
-      </div>
     </div>
 
     <footer class="app-footer"> <!--begin::To the end-->
