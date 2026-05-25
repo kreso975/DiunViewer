@@ -68,7 +68,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="#" class="nav-link" data-page="diun-images">
+                        <a href="#" class="nav-link" data-page="page-diun-images">
                             <i class="nav-icon fas fa-images"></i>
                             <p>DIUN Images</p>
                         </a>
@@ -151,17 +151,20 @@
             <!-- DIUN IMAGES page -->
             <div id="page-diun-images" style="display:none;">
                 <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">DIUN Images</h3>
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h3 class="card-title mb-0 flex-grow-1">DIUN Images</h3>
+
+                        <button id="refresh-diun-images" class="btn btn-sm btn-outline-secondary ms-auto">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
                     </div>
                     <div class="card-body">
-                        <table id="images" class="table table-striped table-bordered">
+                        <table id="diun-images" class="table table-striped table-bordered">
                             <thead>
                             <tr>
                                 <th>Name</th>
                                 <th>Tag</th>
                                 <th>Digest</th>
-                                <th>Status</th>
                                 <th>Created</th>
                             </tr>
                             </thead>

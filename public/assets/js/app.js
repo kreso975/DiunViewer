@@ -1,3 +1,14 @@
+// LOGLEVEL: 0=none, 1=error, 2=warn, 3=info, 4=debug
+let LOGLEVEL = 3; // default: info
+
+function log(level, ...args) {
+    const levels = { error:1, warn:2, info:3, debug:4 };
+    if (LOGLEVEL >= levels[level]) {
+        console[level](...args);
+    }
+}
+
+
 // ===============================
 // GLOBAL IMAGE CACHE
 // ===============================
@@ -43,6 +54,21 @@ document.addEventListener("DOMContentLoaded", async () => {
         await new Promise(r => setTimeout(r, 300));
 
         await loadImages();
+
+        btn.disabled = false;
+        btn.classList.remove("loading");
+    });
+
+    document.getElementById("refresh-diun-images").addEventListener("click", async () => {
+        const btn = document.getElementById("refresh-diun-images");
+
+        btn.disabled = true;
+        btn.classList.add("loading");
+
+        // artificial delay so spinner is visible
+        await new Promise(r => setTimeout(r, 300));
+
+        await loadDiunImages();
 
         btn.disabled = false;
         btn.classList.remove("loading");
@@ -112,6 +138,7 @@ function setupNav() {
 
             document.getElementById("page-images").style.display = (page === "images") ? "" : "none";
             document.getElementById("page-events").style.display = (page === "events") ? "" : "none";
+            document.getElementById("page-diun-images").style.display = (page === "page-diun-images") ? "" : "none";
         });
     });
 }
@@ -187,7 +214,7 @@ async function loadDiunImages() {
 
         // FIX: normalize DIUN images
         DIUN_DB = data.images.map(DIUNImageNormalizer);
-
+        renderDiunImagesTable();
         console.log("Loaded DIUN images:", DIUN_DB.length);
     } catch (err) { 
         console.error("API /diunImages error:", err);
@@ -343,25 +370,103 @@ function renderEventsTable(data) {
     });
 }
 
+// ===============================
+// RENDER DIUN IMAGES TABLE
+// ===============================
+function renderDiunImagesTable() {
+
+    log("debug", "📄 renderDiunImagesTable() called");
+
+    if (!Array.isArray(DIUN_DB)) {
+        log("error", "❌ DIUN_DB is NOT an array:", DIUN_DB);
+        return;
+    }
+
+    log("debug", `📦 DIUN_DB entries: ${DIUN_DB.length}`);
+
+    if (DIUN_DB.length === 0) {
+        log("warn", "⚠️ DIUN_DB is empty → table will render with no rows");
+    } else {
+        log("debug", "🔎 First DIUN entry:", DIUN_DB[0]);
+    }
+
+    const tableData = DIUN_DB;
+
+    // Check if table element exists
+    if ($("#diun-images").length === 0) {
+        log("error", "❌ #diun-images table NOT found in DOM");
+        return;
+    }
+
+    log("debug", "🛠 Initializing DataTable for DIUN images…");
+
+    $("#diun-images").DataTable({
+        data: tableData,
+        destroy: true,
+        responsive: true,
+        autoWidth: false,
+        pageLength: 25,
+
+        columnDefs: [
+            { targets: [1, 3], className: "text-center" }
+        ],
+
+        columns: [
+            {
+                data: "name",
+                render: (d, t, row) => {
+                    log("debug", "Render name:", d);
+                    return `<span class="diun-image-name">${d}</span>`;
+                }
+            },
+            { 
+                data: "tag",
+                render: d => {
+                    log("debug", "Render tag:", d);
+                    return `<code>${d}</code>`;
+                }
+            },
+            { 
+                data: "digest",
+                render: d => {
+                    log("debug", "Render digest:", d);
+                    return `<code>${d}</code>`;
+                }
+            },
+            { 
+                data: "created",
+                render: d => {
+                    log("debug", "Render created:", d);
+                    return formatDateEU(d);
+                }
+            }
+        ],
+
+        initComplete: () => {
+            log("debug", "✅ DIUN images table rendered successfully");
+        }
+    });
+}
+
 function matchUpdates(dockerImageName) {
 
-    console.group("🔍 matchUpdates");
+    log("debug", "🔍 matchUpdates");
 
     if (Array.isArray(dockerImageName)) {
-        console.log("ℹ️ dockerImageName was array, using:", dockerImageName[0]);
+        log("debug", "dockerImageName was array, using:", dockerImageName[0]);
         dockerImageName = dockerImageName[0] || "";
     }
 
-    console.log("🟦 Input dockerImageName (raw):", dockerImageName);
+    log("debug", "Input dockerImageName (raw):", dockerImageName);
 
     const base = stripTag(normalizeImageName(dockerImageName));
-    console.log("🟦 Normalized base name:", base);
+    log("debug", "🟦 Normalized base name:", base);
 
     // DEBUG: SHOW WHAT DIUN_DB ACTUALLY CONTAINS
-    console.log("🔎 DIUN_DB entries (normalized):");
+    log("debug", "🔎 DIUN_DB entries (normalized):");
     DIUN_DB.forEach(d => {
         const diunBase = stripTag(normalizeImageName(d.name));
-        console.log("   →", diunBase);
+        log("debug", "   →", diunBase);
     });
 
     // find docker image object
@@ -370,10 +475,10 @@ function matchUpdates(dockerImageName) {
         return stripTag(normalizeImageName(tag)) === base;
     });
 
-    console.log("🟦 Docker match:", docker ? docker.RepoTags : "❌ none");
+    log("debug", "🟦 Docker match:", docker ? docker.RepoTags : "❌ none");
 
     if (!docker) {
-        console.log("❌ No docker image found → return 0");
+        log("info", "❌ No docker image found → return 0");
         console.groupEnd();
         return 0;
     }
@@ -384,10 +489,10 @@ function matchUpdates(dockerImageName) {
         return diunBase === base;
     });
 
-    console.log("🟩 DIUN match:", diun ? diun.name : "❌ no match");
+    log("debug", "🟩 DIUN match:", diun ? diun.name : "❌ no match");
 
     if (!diun) {
-        console.log("❌ No DIUN entry found → return 0");
+        log("debug", "❌ No DIUN entry found → return 0");
         console.groupEnd();
         return 0;
     }
@@ -396,26 +501,26 @@ function matchUpdates(dockerImageName) {
         ?.split("@")[1]
         ?.replace("sha256:", "") || "";
 
-    console.log("🟦 Local digest:", localDigest || "❌ none");
+    log("debug", "🟦 Local digest:", localDigest || "❌ none");
 
     const remoteDigest =
         diun.digest ||
         diun.latest?.digest?.replace("sha256:", "") ||
         "";
 
-    console.log("🟩 Remote digest:", remoteDigest || "❌ none");
+    log("debug", "🟩 Remote digest:", remoteDigest || "❌ none");
 
     if (!localDigest || !remoteDigest) {
-        console.log("❌ Missing digest(s) → return 0");
+        log("warn", "❌ Missing digest(s) → return 0");
         console.groupEnd();
         return 0;
     }
 
-    console.log("🟥 COMPARE:", `"${localDigest}"`, "vs", `"${remoteDigest}"`);
+    log("debug", "🟥 COMPARE:", `"${localDigest}"`, "vs", `"${remoteDigest}"`);
 
     const match = localDigest === remoteDigest;
 
-    console.log("➡️ RESULT:", match ? "✔ MATCH (true)" : "✘ DIFFERENT (0)");
+    log("debug", "➡️ RESULT:", match ? "✔ MATCH (true)" : "✘ DIFFERENT (0)");
     console.groupEnd();
 
     return match ? true : 0;
