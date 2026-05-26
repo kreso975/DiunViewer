@@ -1,8 +1,8 @@
 # <img src="public/assets/img/diun-logo.png" width="64" style="vertical-align: bottom;"> DIUN Viewer
 
-
-DIUN Viewer is a lightweight web dashboard for [**DIUN (Docker Image Update Notifier)**](https://github.com/crazy-max/diun).  
-It provides a simple UI to inspect images, view update events, and correlate image digests with DIUN webhook notifications.
+DIUN Viewer is a lightweight web dashboard for [**DIUN (Docker Image Update Notifier)**](https://github.com/crazy-max/diun).
+It compares your local Docker image list with the DIUN‑reported image list, highlights digest differences, and shows which images have updates available.
+Incoming DIUN webhook messages are displayed as event logs, giving you a clear history of update notifications.
 
 ---
 
