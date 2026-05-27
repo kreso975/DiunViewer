@@ -166,3 +166,13 @@ table.dataTable tbody tr:hover,
     from { opacity: 0; transform: translateY(4px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+.unread-messages-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    font-size: 0.65rem;
+    padding: 3px 6px;
+    border-radius: 50%;
+    pointer-events: none;
+}

@@ -24,6 +24,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // MUST load events first
     await loadEvents();
+    updateUnreadMessages(EVENTS_DB.length);
 
     // THEN load DIUN images
     await loadDiunImages();
@@ -36,6 +37,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const REFRESH_MINUTES = 5;
     setInterval(async () => {
         await loadEvents();
+        updateUnreadMessages(EVENTS_DB.length);
+        
         await loadDiunImages();
         await loadImages();
     }, REFRESH_MINUTES * 60 * 1000);
@@ -721,3 +724,15 @@ function showEventAlert(type, message) {
         $("#" + id).alert("close");
     }, 3000);
 }
+
+function updateUnreadMessages(count) {
+    const badge = document.getElementById("messages-count");
+
+    if (count > 0) {
+        badge.textContent = count;
+        badge.classList.remove("d-none");
+    } else {
+        badge.classList.add("d-none");
+    }
+}
+
