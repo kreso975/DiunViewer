@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     setInterval(async () => {
         await loadEvents();
         updateUnreadMessages(EVENTS_DB.length);
-        
+
         await loadDiunImages();
         await loadImages();
     }, REFRESH_MINUTES * 60 * 1000);
@@ -100,6 +100,7 @@ function attachDeleteHandlers() {
             if (!r.ok) throw new Error("Server error");
             showEventAlert("success", "Selected events deleted");
             loadEvents();
+            updateUnreadMessages(EVENTS_DB.length);
         })
         .catch(err => {
             console.error("DELETE EVENTS ERROR:", err);
@@ -117,6 +118,7 @@ function attachDeleteHandlers() {
             if (!r.ok) throw new Error("Server error");
             showEventAlert("success", "All events deleted");
             loadEvents();
+            updateUnreadMessages(EVENTS_DB.length);
         })
         .catch(err => {
             console.error("DELETE ALL ERROR:", err);
