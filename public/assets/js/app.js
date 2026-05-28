@@ -82,7 +82,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 function attachDeleteHandlers() {
 
-    $("#ev-delete-selected").off("click").on("click", function () {
+    $("#ev-delete-selected").off("click").on("click", async function () {
         const selectedIds = [...document.querySelectorAll(".ev-check:checked")]
             .map(x => parseInt(x.dataset.id));
 
@@ -91,39 +91,45 @@ function attachDeleteHandlers() {
             return;
         }
 
-        fetch("/api/events/delete", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(selectedIds)
-        })
-        .then(r => {
+        try {
+            const r = await fetch("/api/events/delete", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(selectedIds)
+            });
+
             if (!r.ok) throw new Error("Server error");
+
             showEventAlert("success", "Selected events deleted");
-            loadEvents();
+
+            await loadEvents();  
             updateUnreadMessages(EVENTS_DB.length);
-        })
-        .catch(err => {
+
+        } catch (err) {
             console.error("DELETE EVENTS ERROR:", err);
             showEventAlert("danger", "Failed to delete events");
-        });
+        }
     });
 
-    $("#ev-delete-all").off("click").on("click", function () {
-        fetch("/api/events/delete", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify([])
-        })
-        .then(r => {
+    $("#ev-delete-all").off("click").on("click", async function () {
+        try {
+            const r = await fetch("/api/events/delete", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify([])
+            });
+
             if (!r.ok) throw new Error("Server error");
+
             showEventAlert("success", "All events deleted");
-            loadEvents();
+
+            await loadEvents();
             updateUnreadMessages(EVENTS_DB.length);
-        })
-        .catch(err => {
+
+        } catch (err) {
             console.error("DELETE ALL ERROR:", err);
             showEventAlert("danger", "Failed to delete all events");
-        });
+        }
     });
 }
 
@@ -624,7 +630,7 @@ function openImageModal(image) {
         ? image.RepoTags[0]               // "postgres:15"
         : "<none>";
 
-    const [name, tag] = tagFull.includes(":")
+    const [repoName, tag] = tagFull.includes(":")
         ? tagFull.split(":")
         : [tagFull, ""];
 
@@ -635,6 +641,13 @@ function openImageModal(image) {
 
     // Extract labels
     const labels = image.Labels || {};
+
+    // OCI title + version
+    const ociTitle = labels["org.opencontainers.image.title"] || "";
+    const ociVersion = labels["org.opencontainers.image.version"] || "";
+
+    // Name: use Title, fallback to repo name
+    const name = ociTitle || repoName;
 
     // Build labels HTML
     let labelsHTML = "-";
@@ -663,11 +676,14 @@ function openImageModal(image) {
     // Build modal body
     const body = `
         <dl class="row">
-            <dt class="col-sm-3">Name</dt>
-            <dd class="col-sm-9">${name}</dd>
+            <dt class="col-sm-3">Repo Name</dt>
+            <dd class="col-sm-9">${repoName}</dd>
 
             <dt class="col-sm-3">Tag</dt>
             <dd class="col-sm-9">${tag}</dd>
+
+            <dt class="col-sm-3">Version</dt>
+            <dd class="col-sm-9">${ociVersion || "-"}</dd>
 
             <dt class="col-sm-3">Digest</dt>
             <dd class="col-sm-9"><code>${digest || "-"}</code></dd>
@@ -690,7 +706,7 @@ function openImageModal(image) {
     `;
 
     document.getElementById("imageModalTitle").textContent =
-        "Image details: " + name;
+        name;
 
     document.getElementById("imageModalBody").innerHTML = body;
 

@@ -252,17 +252,30 @@ func handleEvents(w http.ResponseWriter, r *http.Request) {
 		logDebug("handleEvents: valid digests: %+v", validDigests)
 	}
 
+	logInfo("EVENTSTORE BEFORE CLEANUP: %d events", len(eventStore))
+	for _, ev := range eventStore {
+		logInfo("EVENTSTORE ITEM: id=%v digest=%v", ev["_id"], ev["digest"])
+	}
+
 	// Filter out obsolete events
 	cleaned := make([]RawEvent, 0, len(eventStore))
 	removed := 0
 
 	for _, ev := range eventStore {
 		digest, _ := ev["digest"].(string)
+		logInfo("EVENT CHECK: id=%v digest=%s", ev["_id"], digest)
 		if validDigests[digest] {
+			logInfo("EVENT KEEP: id=%v digest=%s", ev["_id"], digest)
 			cleaned = append(cleaned, ev)
 		} else {
+			logWarn("EVENT REJECT: id=%v digest=%s (not in validDigests)", ev["_id"], digest)
 			removed++
 		}
+	}
+
+	logInfo("EVENTSTORE AFTER CLEANUP: %d events", len(cleaned))
+	for _, ev := range cleaned {
+		logInfo("CLEANED ITEM: id=%v digest=%v", ev["_id"], ev["digest"])
 	}
 
 	// Cleanup happened → save file
@@ -273,6 +286,8 @@ func handleEvents(w http.ResponseWriter, r *http.Request) {
 	} else {
 		logDebug("handleEvents: no obsolete events removed")
 	}
+
+	logInfo("EVENTSTORE RETURNING: %d events", len(eventStore))
 
 	// Return cleaned events
 	if err := json.NewEncoder(w).Encode(eventStore); err != nil {
