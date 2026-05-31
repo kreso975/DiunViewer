@@ -224,10 +224,18 @@ MIT License
 See LICENSE for details.
 
 
-| Images | Events |
+| Docker | Diun |
 |--------|--------|
-| ![Images](DOCS/Images.png) | ![Events](DOCS/Events.png) |
+| ![Images](DOCS/DockerImages.png) | ![Events](DOCS/Events.png) |
 
 | Image Details |
 |---------------|
 | ![Image Modal](DOCS/ImagesModal.png) |
+
+| Events  |
+|---------------|
+| ![Image Modal](DOCS/Events.png) |
+
+| Metrics  |
+|---------------|
+| ![Image Modal](DOCS/metrics.png) |
