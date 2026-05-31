@@ -1,4 +1,5 @@
-import { log, formatDateEU } from "./app.js";
+import { log, formatDateEU } from "./utils.js";
+
 
 export async function loadHealth() {
     try {

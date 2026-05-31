@@ -1,4 +1,5 @@
-import { log, formatDateEU } from "./app.js";
+import { log, formatDateEU } from "./utils.js";
+import { store } from "./globals.js";
 
 // ======================================================
 // DIUN METRICS PARSER (FULL COVERAGE)
@@ -82,7 +83,7 @@ export function parseDiunMetrics(text) {
 }
 
 export async function loadDiunMetrics() {
-    const text = await fetch("/metrics").then(r => r.text());
+    const text = await fetch(store.METRICS_URL).then(r => r.text());
     parseDiunMetrics(text);
 }
 

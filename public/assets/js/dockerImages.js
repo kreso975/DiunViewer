@@ -1,5 +1,5 @@
-import { log, formatDateEU } from "./app.js";
-import { DIUN_DB, IMAGES_DB } from "./app.js";
+import { log, formatDateEU } from "./utils.js";
+import { store } from "./globals.js";
 
 // ===============================
 // LOAD IMAGES
@@ -9,11 +9,11 @@ export async function loadImages() {
         const r = await fetch("/api/images");
         const data = await r.json();
 
-        IMAGES_DB.length = 0;       // keep reference intact
-        IMAGES_DB.push(...data);    // update array in-place
+        store.IMAGES_DB.length = 0;       // keep reference intact
+        store.IMAGES_DB.push(...data);    // update array in-place
 
         // Delay DataTables so IMAGES_DB is fully ready
-        setTimeout(() => renderImagesTable(IMAGES_DB), 0);
+        setTimeout(() => renderImagesTable(store.IMAGES_DB), 0);
     } catch (err) { 
         console.error("API /images error:", err);
     }
@@ -231,13 +231,13 @@ export function matchUpdates(dockerImageName) {
 
     // DEBUG: SHOW WHAT DIUN_DB ACTUALLY CONTAINS
     log("debug", "🔎 DIUN_DB entries (normalized):");
-    DIUN_DB.forEach(d => {
+    store.DIUN_DB.forEach(d => {
         const diunBase = stripTag(normalizeImageName(d.name));
         log("debug", "   →", diunBase);
     });
 
     // find docker image object
-    const docker = IMAGES_DB.find(img => {
+    const docker = store.IMAGES_DB.find(img => {
         const tag = img.RepoTags?.[0] || "";
         return stripTag(normalizeImageName(tag)) === base;
     });
@@ -251,7 +251,7 @@ export function matchUpdates(dockerImageName) {
     }
 
     // find DIUN entry
-    const diun = DIUN_DB.find(d => {
+    const diun = store.DIUN_DB.find(d => {
         const diunBase = stripTag(normalizeImageName(d.name));
         return diunBase === base;
     });

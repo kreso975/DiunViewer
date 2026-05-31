@@ -1,5 +1,5 @@
-import { log, formatDateEU } from "./app.js";
-import { DIUN_DB } from "./app.js";
+import { log, formatDateEU } from "./utils.js";
+import { store } from "./globals.js";
 
 // ===============================
 // LOAD Diun IMAGES
@@ -10,12 +10,12 @@ export async function loadDiunImages() {
         const data = await r.json();
 
         // FIX: normalize DIUN images
-        DIUN_DB.length = 0;       // keep reference intact
-        DIUN_DB.push(...data.images.map(DIUNImageNormalizer));
+        store.DIUN_DB.length = 0;       // keep reference intact
+        store.DIUN_DB.push(...data.images.map(DIUNImageNormalizer));
 
-        setTimeout(() => renderDiunImagesTable(DIUN_DB), 0);
+        setTimeout(() => renderDiunImagesTable(store.DIUN_DB), 0);
 
-        console.log("Loaded DIUN images:", DIUN_DB.length);
+        console.log("Loaded DIUN images:", store.DIUN_DB.length);
     } catch (err) { 
         console.error("API /diunImages error:", err);
     }
@@ -43,15 +43,15 @@ export function renderDiunImagesTable(data) {
         return;
     }
 
-    log("debug", `📦 DIUN_DB entries: ${DIUN_DB.length}`);
+    log("debug", `📦 DIUN_DB entries: ${store.DIUN_DB.length}`);
 
-    if (DIUN_DB.length === 0) {
+    if (store.DIUN_DB.length === 0) {
         log("warn", "⚠️ DIUN_DB is empty → table will render with no rows");
     } else {
-        log("debug", "🔎 First DIUN entry:", DIUN_DB[0]);
+        log("debug", "🔎 First DIUN entry:", store.DIUN_DB[0]);
     }
 
-    const tableData = DIUN_DB;
+    const tableData = store.DIUN_DB;
 
     // Check if table element exists
     if ($("#diun-images").length === 0) {

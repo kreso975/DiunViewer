@@ -1,6 +1,14 @@
-// globals.js
-export let IMAGES_DB = [];
-export let EVENTS_DB = [];
-export let DIUN_DB = [];
-export let DIUN_METRICS_ENABLED = false;
-export let LOGLEVEL = 3; // default: info - LOGLEVEL: 0=none, 1=error, 2=warn, 3=info, 4=debug
+class Store {
+    IMAGES_DB = [];
+    EVENTS_DB = [];
+    DIUN_DB = [];
+    DIUN_METRICS_ENABLED = false;
+    LOGLEVEL = 3;
+    METRICS_URL = "https://diun.home/metrics";
+    
+    enableMetrics() {
+        this.DIUN_METRICS_ENABLED = true;
+    }
+}
+
+export const store = new Store();
