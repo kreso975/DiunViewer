@@ -176,3 +176,24 @@ table.dataTable tbody tr:hover,
     border-radius: 50%;
     pointer-events: none;
 }
+
+
+.health-panel {
+    position: absolute;
+    top: 120%;
+    right: 0;
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: .35rem;
+    min-width: 180px;
+    z-index: 9999;
+}
+
+.health-panel .badge {
+    font-size: 0.75rem;
+}
+
+/* Show panel on hover */
+.nav-item.position-relative:hover .health-panel {
+    display: block !important;
+}

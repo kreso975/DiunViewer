@@ -20,6 +20,10 @@ let DIUN_DB = [];
 // INIT
 // ===============================
 document.addEventListener("DOMContentLoaded", async () => {
+    // Initialize all tooltips ONCE
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+
     setupNav();
 
     // MUST load events first
@@ -32,6 +36,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     // THEN load images
     await loadImages();
 
+    // THEN load health
+    await loadHealth();
+
     attachDeleteHandlers();
 
     const REFRESH_MINUTES = 5;
@@ -41,6 +48,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         await loadDiunImages();
         await loadImages();
+        await loadHealth();
     }, REFRESH_MINUTES * 60 * 1000);
 
     document.getElementById("imageModal").addEventListener("hide.bs.modal", () => {
@@ -76,9 +84,73 @@ document.addEventListener("DOMContentLoaded", async () => {
         btn.disabled = false;
         btn.classList.remove("loading");
     });
-
 });
 
+async function loadHealth() {
+    try {
+        const r = await fetch("/api/health");
+        const data = await r.json();
+
+        const services = Object.entries(data).map(([name, status]) => ({
+            name,
+            status
+        }));
+
+        updateHealthBadge(services);
+    } catch (err) {
+        console.error("Healthcheck failed:", err);
+
+        // If health API fails → show red badge
+        updateHealthBadge([{ name: "health", status: "unhealthy" }]);
+    }
+}
+
+function updateHealthBadge(services) {
+    const badge = document.getElementById("status-badge");
+    const panel = document.getElementById("health-panel-content");
+
+    let hasUnhealthy = false;
+    let hasUnknown = false;
+
+    for (const svc of services) {
+        if (svc.status === "unhealthy") hasUnhealthy = true;
+        if (svc.status === "unknown") hasUnknown = true;
+    }
+
+    let text = "Online";
+    let color = "bg-success";
+
+    if (hasUnhealthy) {
+        color = "bg-danger";
+    } else if (hasUnknown) {
+        color = "bg-warning";
+    }
+
+    badge.className = "badge " + color;
+    badge.textContent = text;
+
+    // Build HTML panel
+    let html = "";
+    for (const svc of services) {
+        const name = svc.name || "diun";
+        const status = svc.status;
+
+        let statusColor = "bg-secondary";
+        if (status === "healthy") statusColor = "bg-success";
+        else if (status === "unhealthy") statusColor = "bg-danger";
+        else if (status === "unknown") statusColor = "bg-warning";
+        else if (status === "disabled") statusColor = "bg-secondary";
+
+        html += `
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <span>${name}</span>
+                <span class="badge ${statusColor}">${status}</span>
+            </div>
+        `;
+    }
+
+    panel.innerHTML = html;
+}
 
 function attachDeleteHandlers() {
 

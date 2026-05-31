@@ -55,6 +55,7 @@ func main() {
 	http.HandleFunc("/api/diunImages", handleDiunImages)
 	http.HandleFunc("/api/events/delete", handleDeleteEvents)
 	http.HandleFunc("/api/diun-webhook", handleDiunWebhook)
+	http.HandleFunc("/api/health", handleHealth)
 
 	fs := http.FileServer(http.Dir(publicDir))
 	http.Handle("/", fs)
@@ -452,4 +453,50 @@ func getCurrentImageDigests() map[string]bool {
 	}
 
 	return digests
+}
+
+func handleHealth(w http.ResponseWriter, r *http.Request) {
+	cmd := exec.Command(diunBinary, "healthcheck")
+	out, err := cmd.Output()
+
+	if err != nil {
+		logWarn("healthcheck failed: %v", err)
+		http.Error(w, "healthcheck failed", 500)
+		return
+	}
+
+	lines := strings.Split(string(out), "\n")
+	result := make(map[string]string)
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		// Overall status: "Diun is healthy"
+		if strings.HasPrefix(line, "Diun is ") {
+			status := strings.TrimPrefix(line, "Diun is ")
+			status = strings.TrimSpace(strings.Split(status, " ")[0]) // keep only first word
+			result[""] = status
+			continue
+		}
+
+		// Service lines: "metrics: disabled (disabled by configuration)"
+		parts := strings.SplitN(line, ":", 2)
+		if len(parts) != 2 {
+			continue
+		}
+
+		name := strings.TrimSpace(parts[0])
+
+		// Extract only the first word of the status
+		rawStatus := strings.TrimSpace(parts[1])
+		status := strings.Split(rawStatus, " ")[0] // "disabled (disabled..." → "disabled"
+
+		result[name] = status
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
 }
