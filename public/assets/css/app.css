@@ -197,3 +197,8 @@ table.dataTable tbody tr:hover,
 .nav-item.position-relative:hover .health-panel {
     display: block !important;
 }
+
+.small-box .inner h3 {
+    background-color: transparent !important;
+    opacity: 0.85;
+}
