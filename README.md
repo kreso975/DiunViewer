@@ -226,7 +226,7 @@ See LICENSE for details.
 
 | Docker | Diun |
 |--------|--------|
-| ![Images](DOCS/DockerImages.png) | ![Events](DOCS/Events.png) |
+| ![Images](DOCS/DockerImages.png) | ![Events](DOCS/DiunImages.png) |
 
 | Image Details |
 |---------------|
