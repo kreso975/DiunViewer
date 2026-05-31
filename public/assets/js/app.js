@@ -13,9 +13,8 @@ import { loadEvents, EventsNormalizer, renderEventsTable } from "./events.js";
 import { injectDiunMetricsHTML, loadDiunMetrics, renderDiunMetricsCards } from "./metrics.js";
 import { log, formatDateEU } from "./utils.js";
 
-
 // ===============================
-// GLOBAL IMAGE CACHE
+// GLOBALS
 // ===============================
 import { store } from "./globals.js";
 

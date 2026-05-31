@@ -13,6 +13,12 @@
       },
       "group": "build",
       "problemMatcher": []
+    },
+    {
+        "label": "Check library updates",
+        "type": "shell",
+        "command": "node .vscode/check-updates.js",
+        "problemMatcher": []
     }
   ]
 }
