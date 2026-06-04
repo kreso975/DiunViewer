@@ -94,6 +94,7 @@ export function renderImagesTable(data) {
         ],
 
         initComplete: () => {
+            // IMAGE DETAILS MODAL
             $("#images")
                 .off("click", ".image-link")
                 .on("click", ".image-link", function (e) {
@@ -103,8 +104,25 @@ export function renderImagesTable(data) {
                     const row = tableData.find(x => x.fullTag === fullTag);
 
                     if (row && row.docker) {
-                        openImageModal(row.docker);
+                        openImageModal(row.docker);   // ← THIS WAS NOT FIRING ANYMORE
                     }
+                });
+
+            // RELEASE TAGS MODAL
+            $("#images")
+                .off("click", ".release-tags-link")
+                .on("click", ".release-tags-link", async function (e) {
+                    e.preventDefault();
+
+                    const imageName = this.getAttribute("data-image");
+                    const html = await fetchReleaseNotesHTML(imageName);
+
+                    document.getElementById("releaseTagsModalBody").innerHTML = html;
+
+                    const modal = new bootstrap.Modal(
+                        document.getElementById("releaseTagsModal")
+                    );
+                    modal.show();
                 });
         }
     });
@@ -297,7 +315,6 @@ export function matchUpdates(dockerImageName) {
 // STATUS BADGE
 // ===============================
 export function renderStatusBadge(imageName) {
-
     const result = matchUpdates(imageName);
 
     if (result === true) {
@@ -308,10 +325,12 @@ export function renderStatusBadge(imageName) {
     }
 
     return `
-        <span class="badge text-bg-danger badge-status">
+        <a href="#" class="badge text-bg-danger badge-status release-tags-link"
+           data-image="${imageName}">
             <i class="fas fa-exclamation-circle me-1"></i>Outdated
-        </span>`;
+        </a>`;
 }
+
 
 // Remove :tag from image names
 export function stripTag(name) {
@@ -338,4 +357,61 @@ export function normalizeImageName(name) {
     name = name.split("@")[0];
 
     return name;
+}
+
+async function fetchReleaseNotesHTML(imageName) {
+    // 1. find docker image object
+    const docker = store.IMAGES_DB.find(img =>
+        (img.RepoTags?.[0] || "").includes(imageName)
+    );
+
+    if (!docker) return "<p>No image found.</p>";
+
+    // 2. extract GitHub repo
+    const source = docker.Labels["org.opencontainers.image.source"];
+    if (!source) return "<p>No source label.</p>";
+
+    let repo = normalizeRepo(source);
+    if (!repo) return "<p>Invalid GitHub repo.</p>";
+
+
+    // 3. get latest release metadata
+    const latest = await fetch(`https://api.github.com/repos/${repo}/releases/latest`)
+        .then(r => r.json());
+
+    const tag = latest.tag_name;
+    if (!tag) return "<p>No latest release found.</p>";
+
+    // 4. fetch release notes for that tag
+    const full = await fetch(`https://api.github.com/repos/${repo}/releases/tags/${tag}`)
+        .then(r => r.json());
+
+    const notes = full.body || "No release notes.";
+
+    return `
+        <h5>${repo} — ${tag}</h5>
+        <hr>
+        <pre style="white-space: pre-wrap;">${notes}</pre>
+    `;
+}
+
+function normalizeRepo(source) {
+    if (!source) return null;
+
+    // remove git+, .git, etc.
+    source = source
+        .replace("git+", "")
+        .replace(".git", "")
+        .replace("https://github.com/", "")
+        .replace("http://github.com/", "")
+        .replace("www.github.com/", "");
+
+    // if it contains github.com/.../... keep only owner/repo
+    const m = source.match(/github\.com\/([^/]+)\/([^/]+)/);
+    if (m) return `${m[1]}/${m[2]}`;
+
+    // fallback: if format is owner/repo
+    if (/^[^/]+\/[^/]+$/.test(source)) return source;
+
+    return null;
 }

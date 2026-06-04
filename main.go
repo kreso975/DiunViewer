@@ -139,11 +139,6 @@ func loadEventsFromFile() {
 		return
 	}
 
-	// Assign IDs
-	for i := range eventStore {
-		eventStore[i]["_id"] = i
-	}
-
 	logInfo("Loaded %d events from %s", len(eventStore), eventsFile)
 	logDebug("EventStore content: %+v", eventStore)
 }

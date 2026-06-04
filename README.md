@@ -228,9 +228,9 @@ See LICENSE for details.
 |--------|--------|
 | ![Images](DOCS/DockerImages.png) | ![Events](DOCS/DiunImages.png) |
 
-| Image Details |
-|---------------|
-| ![Image Modal](DOCS/ImagesModal.png) |
+| Image Details | Release Tags |
+|---------------|--------|
+| ![Image Modal](DOCS/ImagesModal.png) | ![Release Tags](DOCS/releaseTags.png) |
 
 | Events  |
 |---------------|

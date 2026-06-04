@@ -13,8 +13,6 @@ export async function loadEvents() {
 
         log("debug", `[EVENTS] Received ${data.length} events from API`);
 
-        data.forEach((ev, i) => ev._id = i);
-
         store.EVENTS_DB.length = 0;
         store.EVENTS_DB.push(...data);
 
